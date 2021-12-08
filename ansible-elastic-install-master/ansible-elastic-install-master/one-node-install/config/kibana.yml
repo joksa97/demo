@@ -1,0 +1,22 @@
+server.port: 5601
+
+server.host: "localhost"
+
+server.name: "hostname"
+
+# The URLs of the Elasticsearch instances to use for all your queries.
+elasticsearch.hosts: ["https://localhost:9200"]
+elasticsearch.ssl.certificateAuthorities: ["/etc/kibana/certs/ca.crt"]
+elasticsearch.ssl.certificate: "/etc/kibana/certs/server.crt"
+elasticsearch.ssl.key: "/etc/kibana/certs/server.key"
+
+elasticsearch.username: "kibana_system"
+elasticsearch.password: "pass"
+
+server.ssl.enabled: true
+server.ssl.certificate: "/etc/kibana/certs/server.crt"
+server.ssl.key: "/etc/kibana/certs/server.key"
+
+xpack.security.enabled: true
+xpack.security.encryptionKey: "CLor3JS43UZrCXODKkgNg7OhlzI5pjl3"
+xpack.encryptedSavedObjects.encryptionKey: 'fhjskloppd678ehkdfdlliverpoolfcr'

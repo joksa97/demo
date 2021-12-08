@@ -1,0 +1,4 @@
+---
+- hosts: linux_servers
+  roles:
+    - role: ansible-role-auditd

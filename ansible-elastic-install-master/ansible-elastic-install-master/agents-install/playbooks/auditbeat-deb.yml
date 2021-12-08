@@ -1,0 +1,42 @@
+---
+- name: Update web servers
+  hosts: auditbeat-deb
+  tasks:
+  - name: Download Auditbeat
+    get_url:
+      url: https://artifacts.elastic.co/downloads/beats/auditbeat/auditbeat-7.14.1-amd64.deb
+      dest: /tmp
+      mode: '765'
+
+  - name: Install Auditbeat
+    apt:
+      deb: /tmp/auditbeat-7.14.1-amd64.deb
+  
+  - name: Remove old config file
+    ansible.builtin.file:
+      path: /etc/auditbeat/auditbeat.yml
+      state: absent
+
+  - name: Copy config file
+    ansible.builtin.copy:
+      src: ../config/auditbeat.yml
+      dest: /etc/auditbeat/auditbeat.yml
+      owner: root
+      group: root
+      mode: '0644'
+
+  - name: Copy certificate
+    ansible.builtin.copy:
+      src: ../config/ca.pem
+      dest: /etc/auditbeat/ca.pem
+      owner: root
+      group: root
+      mode: '0644'
+
+  - name: Install kibana dashboards for Auditbeat
+    command: auditbeat setup -e
+
+
+  - name: Start and Enable Auditbeat
+    command: service auditbeat start && systemctl enable auditbeat
+

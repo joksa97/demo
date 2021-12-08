@@ -1,0 +1,43 @@
+---
+- name: Install elastic-agent and sysmon on windows host
+  hosts: windows_desktop
+  gather_facts: false
+  ignore_unreachable: yes
+  become_method: runas
+  vars_files:
+    - ../config/vars.yml
+  tasks:
+  - name: Install Sysmon
+    import_role:
+      name: ansible-sysmon
+
+  - name: check services
+    win_service:
+        name: "Elastic Agent"
+    register: elastic
+
+  - debug:
+      msg: "Agent je već instaliran. Skiping..."
+    when: elastic.exists == True
+  - debug:
+      msg: "Agent nije pronađen."
+    when: elastic.exists == False
+
+  - name: download elastic agent
+    ansible.windows.win_get_url:
+      url: https://artifacts.elastic.co/downloads/beats/elastic-agent/elastic-agent-7.14.1-windows-x86_64.zip
+      dest: "%TEMP%\\elastic-agent-7.14.1-windows-x86_64.zip"
+#    when: elastic.exists == False
+    
+  - name: Unzip agent to temp folder
+    community.windows.win_unzip:
+      src: "%TEMP%\\elastic-agent-7.14.1-windows-x86_64.zip"
+      dest: "%TEMP%\\"
+#    when: elastic.exists == False
+
+  - name: Install Elastic service
+    tags: test
+    ansible.windows.win_command: "elastic-agent.exe install -f --url=https://selasticsiem.saga.co.yu:8220 --enrollment-token=aTVQVjRIc0JyMnVFNDVObDR2VTg6MVlUeWdvUWlTZVdLeVpTZmtZUDNydw=="
+    args:
+      chdir: "%TEMP%\\elastic-agent-7.14.1-windows-x86_64\\"
+#    when: elastic.exists == False

@@ -1,0 +1,30 @@
+---
+- name: Install elastic agent on LINUX hosts
+  hosts: linux_servers
+  vars_files:
+    - ../config/vars.yml
+  tasks:
+
+  - name: Populate service facts
+    service_facts:
+  - debug:
+      msg: "Elastic-agent je već instaliran"
+    when: "'elastic-agent.service' in services"
+
+  - name: Download Elastic-Agent
+    get_url:
+      url: https://artifacts.elastic.co/downloads/beats/elastic-agent/elastic-agent-{{ elastic_agent_version }}-linux-x86_64.tar.gz
+      dest: /tmp
+      mode: '765'
+    when: "'elastic-agent.service' not in services"
+
+  - name: Unpack alastic agent to /tmp
+    ansible.builtin.unarchive:
+      src: /tmp/elastic-agent-{{ elastic_agent_version }}-linux-x86_64.tar.gz
+      dest: /tmp
+      remote_src: yes
+    when: "'elastic-agent.service' not in services"
+
+  - name: Install Elastic-Agent
+    command: /tmp/elastic-agent-{{ elastic_agent_version }}-linux-x86_64/elastic-agent install -f --url={{ enrollment_url }} --enrollment-token={{ enrollment_token }} --insecure
+    when: "'elastic-agent.service' not in services"

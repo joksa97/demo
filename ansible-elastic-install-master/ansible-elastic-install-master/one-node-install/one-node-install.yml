@@ -1,0 +1,314 @@
+---
+- hosts: elastic-one-nod
+  gather_facts: no
+  vars_files:
+    - vars.yml
+  tasks:
+  - name: Install prerequrements for ElasticSearch
+    apt:
+      pkg:
+        - git
+        - tcpdump
+        - wget
+        - nano
+        - bash-completion
+        - make
+        - apache2
+        - telnet
+        - mlocate
+        - net-tools
+        - python3
+        - zip
+        - lsb-release
+        - curl
+        - apt-transport-https
+        - unzip
+        - gnupg
+        - python3
+        - python3-pip
+      state: latest
+      update_cache: yes
+
+
+  - name: Upgrade all packages to the latest version
+    apt:
+      name: "*"
+      state: latest
+
+
+
+
+# INSTALL ELASTIC
+
+  - name: Add GPG key for Elastic
+    ansible.builtin.apt_key:
+      url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+      state: present
+
+
+  - name: Add ElasticSearch repository into sources list
+    ansible.builtin.apt_repository:
+      repo: deb https://artifacts.elastic.co/packages/7.x/apt stable main
+      state: present
+      filename: elasticsearch
+
+
+  - name: Upgrade all packages to the latest version
+    apt:
+      name: "*"
+      state: latest
+
+
+  - name: Install ElasticSearch
+    apt:
+      pkg:
+        - elasticsearch
+      state: latest
+      update_cache: yes
+
+
+
+
+# INSTALL KIBANA
+
+  - name: Install Kibana
+    apt:
+      pkg:
+        - kibana
+      state: latest
+      update_cache: yes
+
+
+
+
+# INSTALL FILEBEAT
+
+  - name: Install Filebeat
+    apt:
+      pkg:
+        - filebeat
+      state: latest
+      update_cache: yes
+
+
+
+
+# INSTALL LOGSTASH
+
+  - name: Install Logstash
+    apt:
+      pkg:
+        - logstash
+      state: latest
+      update_cache: yes
+
+
+
+# REPLACE CONFIGURATION
+
+  - name: Replace ELASTIC configuration
+    copy:
+      src: config/elasticsearch.yml
+      dest: /etc/elasticsearch/elasticsearch.yml
+
+
+  - name: Replace KIBANA configuration
+    copy:
+      src: config/kibana.yml
+      dest: /etc/kibana/kibana.yml
+
+
+  - name: Replace FILEBEAT configuration
+    copy:
+      src: config/filebeat.yml
+      dest: /etc/filebeat/filebeat.yml
+
+
+
+
+# EDIT CONFIGURATIONS
+
+  - name: Replace localhost with machine ip in ELASTICSEARCH.yml
+    replace:
+      path: /etc/elasticsearch/elasticsearch.yml
+      regexp: 'localhost'
+      replace: "{{ ip }}"
+
+
+  - name: Replace localhost with machine ip in KIBANA.yml
+    replace:
+      path: /etc/kibana/kibana.yml
+      regexp: 'localhost'
+      replace: "{{ ip }}"
+
+
+  - name: Replace hostname with machine hostname in KIBANA.yml
+    replace:
+      path: /etc/kibana/kibana.yml
+      regexp: 'hostname'
+      replace: "{{ hostname }}"
+
+
+  - name: Replace localhost with machine ip in FILEBEAT.yml
+    replace:
+      path: /etc/filebeat/filebeat.yml
+      regexp: 'localhost'
+      replace: "{{ ip }}"
+
+
+
+
+# CREATE CERTS FOLDERS
+
+  - name: Create certs folder in elasticsearch
+    ansible.builtin.file:
+      path: /etc/elasticsearch/certs
+      state: directory
+      mode: '0770'
+
+
+  - name: Create certs folder in kibana
+    ansible.builtin.file:
+      path: /etc/kibana/certs
+      state: directory
+      mode: '0770'
+
+
+  - name: Create certs folder in filebeat
+    ansible.builtin.file:
+      path: /etc/filebeat/certs
+      state: directory
+      mode: '0770'
+
+
+
+
+# COPY CERTS
+
+  - name: Copy all certs to ELASTICSEARCH
+    copy:
+      src: "{{ item }}"
+      dest: /etc/elasticsearch/certs/
+      owner: elasticsearch
+      group: root
+      mode: '0500'
+    with_items:
+      - certs/ca.crt
+      - certs/server.crt
+      - certs/server.key
+
+
+  - name: Copy all certs to KIBANA
+    copy:
+      src: "{{ item }}"
+      dest: /etc/kibana/certs/
+      owner: kibana
+      group: root
+      mode: '0500'
+    with_items:
+      - certs/ca.crt
+      - certs/server.crt
+      - certs/server.key
+
+
+  - name: Copy all certs to FILEBEAT
+    copy:
+      src: "{{ item }}"
+      dest: /etc/filebeat/certs/
+      owner: root
+      group: root
+      mode: '0500'
+    with_items:
+      - certs/ca.crt
+      - certs/server.crt
+      - certs/server.key
+
+
+
+
+# ENABLE SERVICES
+
+  - name: Enable service ELASTICSEARCH
+    ansible.builtin.service:
+      name: elasticsearch
+      enabled: yes
+
+
+  - name: Enable service KIBANA
+    ansible.builtin.service:
+      name: kibana
+      enabled: yes
+
+
+  - name: Enable service FILEBEAT
+    ansible.builtin.service:
+      name: filebeat
+      enabled: yes
+
+
+
+
+# CHANGE PERMISIONS TO ELASTIC AND KIBANA
+
+  - name: Change permisions to ELASTICSEARCH
+    ansible.builtin.file:
+      path: /etc/elasticsearch
+      owner: elasticsearch
+      group: root
+      mode: '0500'
+
+  - name: Change permisions to KIBANA
+    ansible.builtin.file:
+      path: /etc/kibana
+      owner: kibana
+      group: root
+      mode: '0500'
+
+
+
+
+# START ELASTICSEARCH
+
+  - name: Starting ELASTICSEARCH service
+    ansible.builtin.service:
+      name: elasticsearch
+      state: started
+
+
+
+
+# INSTALL ELASTALERT
+
+  - name: Download ELASTALERT files
+    ansible.builtin.git:
+      repo: 'https://github.com/Yelp/elastalert.git'
+      dest: /opt/elastalert/
+    tags: nastavi
+
+  - name: Install Python modules
+    command: pip3 install -r /opt/elastalert/requirements.txt
+    tags: nastavak
+
+  - name: Install ELASTALERT
+    command: python3 /opt/elastalert/setup.py install
+    tags: nastavi
+
+
+# INSTALL FLEAT SERVER 
+
+
+
+# NEXT TO DO
+
+  - debug:
+      msg: "RUN this command on new elastic host: /usr/share/elasticsearch/bin/elasticsearch-setup-passwords auto "
+
+  - debug:
+      msg: "SAVE printed passwords and edit elastic, filebeat, kibana configurations with elastic user"
+
+  - debug:
+      msg: "RUN systemctl start kibana, systemctl start filebeat"
+
+
+
+

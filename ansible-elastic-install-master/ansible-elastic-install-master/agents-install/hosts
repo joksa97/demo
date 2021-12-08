@@ -1,0 +1,14 @@
+windows_desktop:
+  hosts:
+    SLAVKOM-HP.saga.co.yu:
+  vars:
+    ansible_user: SagaSecurity
+    ansible_password: uz2D0xLn
+    ansible_connection: winrm
+    ansible_winrm_server_cert_validation: ignore
+    ansible_winrm_transport: ntlm
+    ansible_port: 5985
+linux_servers:
+  hosts:
+    10.3.2.92:
+    10.3.2.91:

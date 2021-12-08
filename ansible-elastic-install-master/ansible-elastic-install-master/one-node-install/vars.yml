@@ -1,0 +1,4 @@
+---
+elastic_version: '7.14.1'
+hostname: selasticsiem.saga.co.yu
+ip: '10.1.35.10'
